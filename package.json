@@ -8,7 +8,7 @@
     "email": "flex@cash.com"
   },
   "scripts": {
-    "start": "grunt"
+    "start": "npm start"
   },
   "dependencies": {
     "grunt": "^0.4.5",
