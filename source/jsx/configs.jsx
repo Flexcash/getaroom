@@ -51,7 +51,7 @@ define([], function() {
 
     default:
       config = {
-        env: 'local',
+        env: 'prod',
         Skylink: {
           apiMCUKey: '68e78643-370a-48e7-a9da-543dbe7b735a',
           apiNoMCUKey: '68e78643-370a-48e7-a9da-543dbe7b735a'
@@ -60,7 +60,7 @@ define([], function() {
         // Skylink: {
         //   apiMCUKey: '7bcba74c-ee42-4fb7-ba17-94a9edb3c1bf',
         //   apiNoMCUKey: '7e31b061-71e6-4dd7-bd55-516579973930'
-          
+
         // }
       };
   }
