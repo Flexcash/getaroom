@@ -18,7 +18,8 @@
     }
   ],
   "scripts": {
-    "start": "grunt dev"
+     "postinstall": "grunt uglify",
+    "start": "grunt uglify"
   },
   "dependencies": {
     "skylinkjs": "^0.6.0"
