@@ -218,7 +218,7 @@ module.exports = function (grunt) {
             dev: {
                 options: {
                     base: '<%= source %>/',
-                    port: 8085,
+                    port: process.env.PORT || 8085,
                     open: 'https://rwong.heroku.com:8085',
                     protocol: 'https',
                     key: grunt.file.read('server.key').toString(),
@@ -229,7 +229,7 @@ module.exports = function (grunt) {
             production: {
                 options: {
                     base: '<%= production %>/',
-                    port: 8080,
+                    port: process.env.PORT || 8080,
                     open: 'https://rwong.heroku.com:8080',
                     protocol: 'https',
                     key: grunt.file.read('server.key').toString(),
