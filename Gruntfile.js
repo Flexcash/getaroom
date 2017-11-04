@@ -219,8 +219,8 @@ module.exports = function (grunt) {
                 options: {
                     base: '<%= base %>/',
                     port: process.env.PORT || 8085,
-                    open: 'https://rwong.heroku.com',
-                    protocol: 'https',
+                    open: 'http://rwong.heroku.com',
+                    protocol: 'http',
                     // key: grunt.file.read('server.key').toString(),
                     // cert: grunt.file.read('server.crt').toString(),
                     // ca: grunt.file.read('ca.crt').toString()
