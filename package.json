@@ -8,8 +8,7 @@
     "email": "flex@cash.com"
   },
   "scripts": {
-    "postinstall": "grunt uglify",
-    "start": "grunt uglify"
+    "start": "grunt dev"
   },
   "dependencies": {
     "skylinkjs": "^0.6.0",
