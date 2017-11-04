@@ -351,7 +351,7 @@ module.exports = function (grunt) {
     grunt.registerTask('publish', [
         'clean:production',
         'copy:production'
-        'connect:production:keepalive'
+        //'connect:production:keepalive'
     ]);
 
     grunt.registerTask('dev', [
@@ -361,6 +361,6 @@ module.exports = function (grunt) {
         'watch'
     ]);
 
-    grunt.registerTask('default', ['publish']);
+    grunt.registerTask('default', ['dev']);
 
 };

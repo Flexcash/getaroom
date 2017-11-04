@@ -22,7 +22,7 @@ define([], function() {
   switch (window.location.host) {
     case 'rwong.heroku.com':
       config = {
-        env: 'prod',
+        env: 'dev',
         Skylink: {
           apiMCUKey: '68e78643-370a-48e7-a9da-543dbe7b735a',
           apiNoMCUKey: '68e78643-370a-48e7-a9da-543dbe7b735a'
