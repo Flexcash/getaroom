@@ -217,7 +217,7 @@ module.exports = function (grunt) {
             },
             dev: {
                 options: {
-                    base: '<%= production %>/',
+                    base: '<%= base %>/',
                     port: process.env.PORT || 8085,
                     open: 'https://rwong.heroku.com:8085',
                     protocol: 'https',
@@ -351,7 +351,7 @@ module.exports = function (grunt) {
     grunt.registerTask('publish', [
         'clean:production',
         'copy:production'
-        //'connect:production:keepalive'
+        'connect:production:keepalive'
     ]);
 
     grunt.registerTask('dev', [
@@ -361,6 +361,6 @@ module.exports = function (grunt) {
         'watch'
     ]);
 
-    grunt.registerTask('default', ['dev']);
+    grunt.registerTask('default', ['publish']);
 
 };
