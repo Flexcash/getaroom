@@ -8,7 +8,6 @@
     "email": "flex@cash.com"
   },
   "scripts": {
-    "postinstall": "grunt uglify",
     "start": "grunt dev"
   },
   "dependencies": {
