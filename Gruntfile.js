@@ -361,7 +361,7 @@ module.exports = function (grunt) {
         'watch'
     ]);
 
-    grunt.registerTask('default', ['dev']);
+    // grunt.registerTask('default', ['dev']);
   // Load the plugin that provides the "uglify" task.
   grunt.loadNpmTasks('grunt-contrib-uglify');
 
