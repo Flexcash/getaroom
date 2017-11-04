@@ -1,24 +1,14 @@
 {
   "name": "getaroomio",
-  "description": "FREE and hassle free audio/video real-time chat for desktop and mobile.",
-  "version": "0.3.5",
-  "homepage": "http://github.com/serrynaimo/getaroom",
+  "description": "VIDEO CHAT TEST",
+  "version": "1.0.0",
+  "homepage": "http://github.com/flexcash/getaroom",
   "author": {
-    "name": "Thomas Gorissen",
-    "email": "mail@serrynaimo.com"
+    "name": "Flex",
+    "email": "flex@cash.com"
   },
-  "repository": {
-    "type": "git",
-    "url": "git@github.com/serrynaimo/getaroom.git"
-  },
-  "licenses": [
-    {
-      "type": "All rights reserved",
-      "url": "http://github.com/serrynaimo/getaroom"
-    }
-  ],
   "scripts": {
-     "postinstall": "grunt uglify",
+    "postinstall": "grunt uglify",
     "start": "grunt uglify"
   },
   "dependencies": {
