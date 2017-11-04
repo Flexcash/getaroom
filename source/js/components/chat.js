@@ -9,6 +9,7 @@ define([
   'marked'
 
 ], function (
+
   React,
   Utils,
   Constants,
@@ -17,104 +18,109 @@ define([
   Marked
 ) {
 
-  /**
-   * The chat component.
-   * @class Chat
-   */
   var Chat = React.createClass({displayName: 'Chat',
     marked: Marked,
 
     /**
-     * Handles when the chatbox is in focus.
-     * @method handleFocus
-     * @for Chat
+     * Handles when the chatbox is in focus
      */
     handleFocus: function(e) {
-      // Ignore the press event action for <a href></a>.
-      if (e.target.tagName === 'A') {
+      if(e.target.tagName === 'A') {
         return;
       }
-
       Dispatcher.toggleControls(false);
       Dispatcher.toggleChat();
     },
 
     /**
-     * Handles sending chat message.
-     * @method handleSendMessage
-     * @for Chat
+     * Handles sending chat message
      */
     handleSendMessage: function(e) {
       if(!e.keyCode || e.keyCode === 13) {
-        var message = e.currentTarget.value;
+        var user = this.props.state.users.filter(function (user) {
+          return user.id === 0;
+        })[0];
 
-        Skylink.sendMessage({
-          content: message,
-          date: (new Date()).toISOString()
-        });
+        Dispatcher.sendMessage(e.currentTarget.value);
+        //Dispatcher.setName(e.currentTarget.value);
 
         e.currentTarget.value = '';
         Dispatcher.toggleControls(false);
       }
     },
 
+    /**
+     * Handles when Chat updates
+     */
     componentDidUpdate: function() {
       var cont = document.getElementById('messages');
-      // Scroll to bottom latest message received when chat component updates.
       if(cont) {
         cont.scrollTop = cont.scrollHeight;
       }
     },
 
+    /**
+     * Handles rendering of the Chat
+     */
     render: function() {
-      var app = this;
-
-      // Render chat UI as offline state when self is not in the room.
-      if(app.props.state.state !== Constants.AppState.IN_ROOM) {
+      if(this.props.state.state !== Constants.AppState.IN_ROOM) {
         return (React.DOM.section({id: "chat", className: "offline"}));
       }
 
-      var outputHTML = [];
+      var res = [];
+      var messages = this.props.state.room.messages || [];
+      var user = this.props.state.users.filter(function (user) {
+        return user.id === 0;
+      })[0];
 
-      Utils.forEach(app.props.state.room.messages, function (message) {
-        var userName = 'User "' +  message.userId + '"';
+      for(var i = 0; i < messages.length; i++) {
+        var message = messages[i];
+
         var className = 'message';
 
-        className += message.userId === 'self' ? ' you' : '';
-        className += message.type === Constants.MessageType.ACTION ? ' action' : '';
-
-        if (message.userId === 'getaroom.io') {
-          userName = 'getaroom.io';
-
-        } else if (message.userId === 'MCU') {
-          userName = 'MCU';
-
-        } else {
-          userName = (app.props.state.users[message.userId] || {}).name || userName;
+        if(message.user === 0) {
+          className = className + ' you';
         }
 
-        outputHTML.push(
-          React.DOM.div({key: message.date, className: className}, 
-              React.DOM.span({className: "name"}, userName), 
-              React.DOM.span({className: "body", dangerouslySetInnerHTML: {__html: app.marked(message.content)}})
-          )
-        );
-      });
+        if(message.type === Constants.MessageType.ACTION) {
+          className = className + ' action';
+        }
+
+        // If adding image
+        if(message.img) {
+          res.push(
+            React.DOM.div({key: message.date, className: className}, 
+                React.DOM.img({src: message.img}), 
+                React.DOM.span({className: "name"}, message.name), 
+                React.DOM.span({className: "body", dangerouslySetInnerHTML: {__html: this.marked(message.content)}})
+            )
+          );
+        // Else
+        } else {
+          res.push(
+            React.DOM.div({key: message.date, className: className}, 
+                React.DOM.span({className: "name"}, message.name), 
+                React.DOM.span({className: "body", dangerouslySetInnerHTML: {__html: this.marked(message.content)}})
+            )
+          );
+        }
+      }
 
       return (
         React.DOM.section({id: "chat"}, 
             React.DOM.div(null, 
-                React.DOM.div({id: "messages", onClick: app.handleFocus}, 
-                    React.DOM.div(null, outputHTML)
+                React.DOM.div({id: "messages", onClick: this.handleFocus}, 
+                    React.DOM.div(null, 
+                       res
+                    )
                 ), 
-                React.DOM.div({id: "input", className: app.props.state.room.status !== Constants.RoomState.CONNECTED ? 'disabled' : ''}, 
-                    React.DOM.input({id: "messageInput", type: "text", placeholder: "Chat message", autoComplete: "off", onKeyDown: app.handleSendMessage})
+                React.DOM.div({id: "input", className: this.props.state.room.status !== Constants.RoomState.CONNECTED ? 'disabled' : ''}, 
+                    React.DOM.input({id: "messageInput", type: "text", placeholder: "Chat message", autoComplete: "off", onKeyDown: this.handleSendMessage})
                 )
             )
         )
       )
     }
-
   });
 
   return Chat;

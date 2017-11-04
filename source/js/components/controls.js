@@ -15,363 +15,288 @@ define([
   Configs,
   Skylink,
   Router
+
 ) {
 
-  /**
-   * The controls component.
-   * @class Controls
-   */
   var Controls = React.createClass({displayName: 'Controls',
-
     /**
-     * Handles the select MCU toggle checkbox.
-     * @method handleMCUClick
-     * @for Controls
+     * Handle MCU toggle button
      */
     handleMCUClick: function(e) {
-      this.props.state.room.flags.mcu = e.target.checked === true;
+      Dispatcher.setMCU(e.target.checked);
     },
 
     /**
-     * Handles the select force TURN toggle checkbox.
-     * @method handleForceTURNClick
-     * @for Controls
+     * Handle when controls are updated
      */
-    handleForceTURNClick: function(e) {
-      this.props.state.room.flags.forceTurn = e.target.checked === true;
+    componentDidUpdate: function() {
+      var $mcu = document.getElementById('mcu');
+      if($mcu) {
+        $mcu.checked = this.props.state.room.useMCU;
+      }
     },
 
     /**
-     * Handles when "Start a Call" button is clicked.
-     * @method handleStartRoom
-     * @for Controls
+     * Handle start a call button
      */
     handleStartRoom: function() {
-      var app = this;
+      //var room = this.props.state.room.useMCU ? 'm' : '';
       var room = Utils.uuid(6);
       var url = '/' + room;
 
-      if (app.props.state.room.flags.mcu) {
-        url += (url.indexOf('?') === -1 ? '?' : '&') + 'mcu=1';
+      if (this.props.state.room.useMCU) {
+        url += '?mcu=1';
       }
 
-      if (app.props.state.room.flags.forceTurn) {
-        url += (url.indexOf('?') === -1 ? '?' : '&') + 'forceTurn=1';
-      }
-
-      // Redirect instead for IE case if HTML5 history is not supported.
+      // Check if history is supported, or else just redirect immdediately
       if (window.historyNotSupported) {
         window.location.href = url;
-        return;
+      } else {
+        Router.setRoute(url);
       }
-
-      Router.setRoute(url);
     },
 
     /**
-     * Handles when "Leave Room" button is clicked.
-     * @method handleLeaveRoom
-     * @for Controls
+     * Handle leave room button
      */
     handleLeaveRoom: function() {
-      var app = this;
+      Skylink.leaveRoom();
 
-      Skylink.leaveRoom(true, function () {
-        var url = '/'
+      var url = '/'
 
-        // Redirect instead for IE case if HTML5 history is not supported, and if connecting, just redirect instantly to clear all current session.
-        if (app.props.state.room.status !== Constants.RoomState.CONNECTED || window.historyNotSupported) {
+      // Check if User is in room. If connecting, just redirect instantly to clear all current session
+      if (this.props.state.room.status !== Constants.RoomState.CONNECTED) {
+        window.location.href = url;
+      } else {
+        // Check if history is supported, or else just redirect immdediately
+        if (window.historyNotSupported) {
           window.location.href = url;
-          return;
+        } else {
+          Router.setRoute(url);
         }
-
-        Router.setRoute(url);
-      });
+      }
     },
 
     /**
-     * Handles when video mute button is clicked.
-     * @method handleVideoMute
-     * @for Controls
+     * Handle the toggle mute video button
      */
     handleVideoMute: function() {
-      var app = this;
+      var user = this.props.state.users.filter(function (user) {
+        return user.id === 0;
+      })[0];
 
-      if (!app.props.state.users.self.video) {
+      if (!user.hasVideo) {
         return;
       }
 
-      Skylink[app.props.state.users.self.video.muted ? 'enableVideo' : 'disableVideo']();
+      Skylink[user.videoMute ? 'enableVideo' : 'disableVideo']();
     },
 
     /**
-     * Handles when audio mute button is clicked.
-     * @method handleAudioMute
-     * @for Controls
+     * Handle the toggle mute audio button
      */
     handleAudioMute: function() {
-      var app = this;
+      var user = this.props.state.users.filter(function (user) {
+        return user.id === 0;
+      })[0];
 
-      if (!app.props.state.users.self.audio) {
+      if (!user.hasAudio) {
         return;
       }
 
-      Skylink[app.props.state.users.self.audio.muted ? 'enableAudio' : 'disableAudio']();
+      Skylink[user.audioMute ? 'enableAudio' : 'disableAudio']();
     },
 
     /**
-     * Handles when Room lock button is clicked.
-     * @method handleRoomLock
-     * @for Controls
+     * Handles the room lock button
      */
     handleRoomLock: function() {
-      var app = this;
-
-      Skylink[app.props.state.room.states.locked ? 'unlockRoom' : 'lockRoom']();
+      if(this.props.state.users.length < Configs.maxUsers) {
+        Skylink[this.props.state.room.isLocked ? 'unlockRoom' : 'lockRoom']();
+      }
     },
 
     /**
-     * Handles when screensharing button is clicked.
-     * @method handleScreenshare
-     * @for Controls
+     * Handles the screensharing button
      */
     handleScreenshare: function() {
-      var app = this;
-
-      // Disable user from pressing multiple times until screensharing screen has processed.
-      if (app.props.state.room.prevent.screensharing) {
+      // Disable user from pressing multiple times invokes
+      //  until screensharing screen has processed
+      if (this.props.state.room.preventScreenshare) {
         return;
       }
+      var user = this.props.state.users.filter(function (user) {
+        return user.id === 0;
+      })[0];
+      var sharing = false;
 
-      app.props.state.room.prevent.screensharing = true;
+      if(!user.screensharing) {
+        this.props.state.room.preventScreenshare = true;
+        sharing = true;
+      } else {
+        sharing = false;
+      }
 
-      if (app.props.state.users.self.video && app.props.state.users.self.video.screensharing) {
+      if (sharing) {
+        this.props.state.users[0].screensharingPriority = (new Date ()).getTime();
+
+        Skylink.setUserData(Utils.extend(Skylink.getUserData(), {
+          screensharingPriority: this.props.state.users[0].screensharingPriority
+        }));
+
+        Skylink.shareScreen();
+
+      } else {
+        // Dispatch to all element
+        //Dispatcher.sharescreen(false);
+        // Stop sharing screen
         Skylink.stopScreen();
-        app.props.state.room.prevent.screensharing = false;
-        return;
       }
-
-      app.props.state.users.self.priority = (new Date ()).getTime();
-
-      Skylink.setUserData({
-        name: app.props.state.users.self.name,
-        priority: app.props.state.users.self.priority
-      });
-
-      Skylink.shareScreen(true, function (err) {
-        if (err) {
-          Skylink.stopScreen();
-          return;
-        }
-      });
     },
 
     /**
-     * Handles when MCU recording button is clicked.
-     * @method handleRecording
-     * @for Controls
+     * Handles the recording option
      */
     handleRecording: function () {
-      var app = this;
-
-      // Disable user from pressing multiple times until recording has started / failed / ready to stop.
-      if (app.props.state.room.prevent.recording || !app.props.state.room.states.mcuServerId) {
+      if (this.props.state.room.preventRecording || this.props.state.room.preventRecordingOneUser ||
+        !this.props.state.room.hasMCU) {
         return;
       }
 
-      if(!app.props.state.room.states.recording) {
-        app.props.state.room.prevent.recording = true;
+      if(!this.props.state.room.isRecording) {
+        // Prevent multiple clicks for now
+        this.props.state.room.preventRecording = true;
         Skylink.startRecording();
-        return;
-      }
 
-      Skylink.stopRecording();
-      app.props.state.room.prevent.recording = true;
+      } else {
+        Skylink.stopRecording();
+      }
     },
 
     /**
-     * Handles when share link textbox is clicked.
-     * @method handleLinkClick
-     * @for Controls
+     * Handles the link share textbox
      */
     handleLinkClick: function (e) {
       e.target.setSelectionRange(0, e.target.value.length);
     },
 
     /**
-     * Handles when close button "x" is clicked.
-     * @method handleClose
-     * @for Controls
+     * Handles the close controls button
      */
     handleClose: function(e) {
       Dispatcher.toggleControls();
     },
 
     /**
-     * Handles when display name textbox is clicked.
-     * @method handleDisplayName
-     * @for Controls
+     * Handles the display name textbox
      */
     handleDisplayName: function (e) {
-      var app = this;
-      var name = e.currentTarget.value;
-
-      Skylink.setUserData({
-        name: name,
-        priority: app.props.state.users.self.priority
-      });
+      Dispatcher.setName(e.currentTarget.value);
     },
 
-    componentDidUpdate: function() {
-      var app = this;
-      var mcuDom = document.getElementById('mcu');
-      var forceTurnDom = document.getElementById('forceTurn');
-
-      // Enable MCU toggle.
-      if (mcuDom) {
-        mcuDom.checked = app.props.state.room.flags.mcu;
-      }
-
-      // Enable force TURN toggle.
-      if (forceTurnDom) {
-        forceTurnDom.checked = app.props.state.room.flags.forceTurn;
-      }
-    },
-
+    /**
+     * Handles rendering the controls
+     */
     render: function() {
-      var app = this;
-      var outputHTML = [];
-      var logoClassName = 'logo';
+      var res = [];
+      var user = this.props.state.users.filter(function (user) {
+        return user.id === 0;
+      })[0];
 
-      logoClassName += app.props.state.room.status === Constants.RoomState.CONNECTED ? ' joinRoom' : '';
-      //logoClassName += app.props.state.room.states.mcuServerId ? ' recording' : '';
+      res.push(React.DOM.div({className: 'logo ' + (this.props.state.room.status === Constants.RoomState.CONNECTED ? 'joinRoom' : '')}, "getaroom.io"));
 
-      // Push logo.
-      outputHTML.push(React.DOM.div({className: logoClassName}, "getaroom.io"));
+      // Controls state when in foyer
+      if(this.props.state.state === Constants.AppState.FOYER) {
+        res.push(
+          React.DOM.button({className: "joinRoom mainControl", onClick: this.handleStartRoom}, 
+              "Start a new call"
+          )
+        );
 
-      switch (app.props.state.state) {
-        // -----------------------------
-        // Controls state in foyer.
-        case Constants.AppState.FOYER:
-          // Push "Start a Call" button.
-          outputHTML.push(
-            React.DOM.button({className: "joinRoom mainControl", onClick: app.handleStartRoom}, 
-                "Start a new call"
-            )
-          );
-
-          // Push description.
-          outputHTML.push(
-            React.DOM.div({className: "description"}, 
-                React.DOM.p(null, 
-                    "Start a FREE call", React.DOM.br(null), "with up to ", Configs.maxUsers, " people"
-                ), 
-                React.DOM.p(null, 
-                    "Just hit the \"Start a new call\" button below and share the link.", React.DOM.br(null), React.DOM.br(null), 
-                    "This app is a ", React.DOM.a({href: "https://temasys.io/platform", target: "_blank"}, "SkylinkJS"), " tech demo and you can fork the ", React.DOM.a({href: "https://github.com/Temasys/getaroom", target: "_blank"}, "code on github"), "."
-                )
-            )
-          );
-
-          // Push select MCU toggle checkbox.
-          outputHTML.push(
-            React.DOM.div({className: "link top"}, 
-                React.DOM.input({type: "checkbox", id: "mcu", name: "mcu", onClick: app.handleMCUClick}), " ", React.DOM.label({for: "mcu"}, "Use Skylink Media Relay")
-            )
-          );
-
-          // Push select force TURN toggle checkbox.
-          if (!app.props.state.room.flags.mcu) {
-            outputHTML.push(
-              React.DOM.div({className: "link"}, 
-                  React.DOM.input({type: "checkbox", id: "forceTurn", name: "forceTurn", onClick: app.handleForceTURNClick}), " ", React.DOM.label({for: "forceTurn"}, "Force Skylink TURN Connections")
+        res.push(
+          React.DOM.div({className: "description"}, 
+              React.DOM.p(null, 
+                  "Start a FREE call", React.DOM.br(null), "with up to ", Configs.maxUsers, " people"
+              ), 
+              React.DOM.p(null, 
+                  "Just hit the \"Start a new call\" button below and share the link.", React.DOM.br(null), React.DOM.br(null), 
+                  "This app is a ", React.DOM.a({href: "https://temasys.github.io", target: "_blank"}, "SkylinkJS"), " tech demo and you can fork the ", React.DOM.a({href: "https://github.com/Temasys/getaroom", target: "_blank"}, "code on github"), "."
               )
+          )
+        );
+
+        res.push(
+          React.DOM.div({className: "link"}, 
+              React.DOM.input({type: "checkbox", id: "mcu", name: "mcu", onClick: this.handleMCUClick}), " ", React.DOM.label({for: "mcu"}, "Use Skylink Media Relay")
+          )
+        );
+
+      // Controls state when in Room
+      } else if(this.props.state.state === Constants.AppState.IN_ROOM) {
+        res.push(
+          React.DOM.button({className: "leaveRoom mainControl", onClick: this.handleLeaveRoom}, 
+              "Leave this call"
+          )
+        );
+
+        res.push(
+          React.DOM.div({className: "link"}, 
+              "Invite others to join this call at this link:", React.DOM.br(null), 
+              React.DOM.input({type: "text", value: location.toString(), onClick: this.handleLinkClick, readOnly: true})
+          )
+        );
+
+        res.push(
+          React.DOM.div({className: "status"}, 
+            React.DOM.span(null, "Status: ", this.props.state.room.status), 
+            React.DOM.p({className: "statusMessage"}, this.props.state.room.error)
+          )
+        );
+
+        if(this.props.state.room.status === Constants.RoomState.CONNECTED && user.stream != null) {
+          res.push(
+            React.DOM.button({id: "videoMute", onClick: this.handleVideoMute, className: this.props.state.users[0].hasVideo ? (user.videoMute ? '' : 'on') : 'off muted', title: "Mute/Unmute Video"})
+          );
+
+          res.push(
+            React.DOM.button({id: "audioMute", onClick: this.handleAudioMute, className: this.props.state.users[0].hasAudio ? (user.audioMute ? '' : 'on') : 'off muted', title: "Mute/Unmute Audio"})
+          );
+
+          res.push(
+            React.DOM.button({id: "screenshare", onClick: this.handleScreenshare, className: (user.screensharing ? 'on' : '') + ' ' + (this.props.state.room.preventScreenshare ? 'muted' : ''), title: "Share your screen"})
+          );
+
+          res.push(
+            React.DOM.button({id: "roomLock", onClick: this.handleRoomLock, className: this.props.state.room.isLocked ? '' : 'on', title: "Lock/Unlock Room"})
+          );
+
+          if (this.props.state.room.hasMCU) {
+            res.push(
+              React.DOM.button({id: "recording", onClick: this.handleRecording, className: (this.props.state.room.isRecording ? 'on' : '') + ' ' + (this.props.state.room.preventRecording || this.props.state.room.preventRecordingOneUser ? 'muted' : ''), title: "Start/Stop Recording"})
             );
           }
-          break;
 
-        // -----------------------------
-        // Controls state when in Room.
-        case Constants.AppState.IN_ROOM:
-          // Push "Leave Room" button.
-          outputHTML.push(
-            React.DOM.button({className: "leaveRoom mainControl", onClick: app.handleLeaveRoom}, 
-                "Leave this call"
+          res.push(
+            React.DOM.div({className: "displayName"}, 
+                React.DOM.span(null, "Display Name"), 
+                React.DOM.input({id: "displayName", type: "text", value: user.name, placeholder: "Display Name", 
+                    title: "Your Display Name in Chat", onChange: this.handleDisplayName})
             )
           );
 
-          // Push share link textbox.
-          outputHTML.push(
-            React.DOM.div({className: "link"}, 
-                "Invite others to join this call at this link:", React.DOM.br(null), 
-                React.DOM.input({type: "text", value: location.toString(), onClick: app.handleLinkClick, readOnly: true})
-            )
-          );
-
-          // Push Room connection status.
-          outputHTML.push(
-            React.DOM.div({className: "status"}, 
-              React.DOM.span(null, "Status: ", app.props.state.room.status), 
-              React.DOM.p({className: "statusMessage"}, app.props.state.room.statusError)
-            )
-          );
-
-          if(app.props.state.room.status === Constants.RoomState.CONNECTED) {
-            var roomLockClassName = app.props.state.room.states.locked ? '' : 'on';
-            var screenshareClassName = app.props.state.users.self.video && app.props.state.users.self.video.screensharing ? 'on' : '';
-            var audioClassName = app.props.state.users.self.stream && app.props.state.users.self.audio ? (app.props.state.users.self.audio.muted ? '' : 'on') : 'off muted';
-            var videoClassName = app.props.state.users.self.stream && app.props.state.users.self.video ? (app.props.state.users.self.video.muted ? '' : 'on') : 'off muted';
-            var recordingClassName = app.props.state.room.states.recording ? 'on' : '';
-
-            screenshareClassName += app.props.state.room.prevent.screensharing ? ' muted' : '';
-            recordingClassName += app.props.state.room.prevent.recording ? ' muted' : '';
-
-            // Push video mute toggle button.
-            outputHTML.push(
-              React.DOM.button({id: "videoMute", onClick: app.handleVideoMute, className: videoClassName, title: "Mute/Unmute Video"})
-            );
-
-            // Push audio mute toggle button.
-            outputHTML.push(
-              React.DOM.button({id: "audioMute", onClick: app.handleAudioMute, className: audioClassName, title: "Mute/Unmute Audio"})
-            );
-
-            // Push screensharing toggle button.
-            outputHTML.push(
-              React.DOM.button({id: "screenshare", onClick: app.handleScreenshare, className: screenshareClassName, title: "Share your screen"})
-            );
-
-            // Push Room lock toggle button.
-            outputHTML.push(
-              React.DOM.button({id: "roomLock", onClick: app.handleRoomLock, className: roomLockClassName, title: "Lock/Unlock Room"})
-            );
-
-            /*if (app.props.state.room.states.mcuServerId) {
-              // Push recording toggle button.
-              outputHTML.push(
-                <button id="recording" onClick={app.handleRecording} className={recordingClassName} title="Start/Stop Recording"></button>
-              );
-            }*/
-
-            // Push display name textbox.
-            outputHTML.push(
-              React.DOM.div({className: "displayName"}, 
-                  React.DOM.span(null, "Display Name"), 
-                  React.DOM.input({id: "displayName", type: "text", value: app.props.state.users.self.name, placeholder: "Display Name", 
-                      title: "Your Display Name in Chat", onChange: app.handleDisplayName})
-              )
-            );
-          }
+        }
       }
 
       return (
         React.DOM.section({id: "controls"}, 
             React.DOM.nav(null, 
-                React.DOM.button({onClick: app.handleClose, className: app.props.state.state === Constants.AppState.IN_ROOM ? 'close' : ''}), 
+                React.DOM.button({onClick: this.handleClose, className: this.props.state.state === Constants.AppState.IN_ROOM ? 'close' : ''}), 
                 React.DOM.button(null), 
                 React.DOM.button(null)
             ), 
-            React.DOM.div(null, outputHTML)
+            React.DOM.div(null, 
+                res
+            )
         )
       );
     }

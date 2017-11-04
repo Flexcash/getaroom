@@ -12,140 +12,150 @@ define([
 ) {
 
   /**
-   * The entire user areas component that wraps the `UserAreaList`.
-   * @class UserAreas
+   * Contains the UserAreas class element
+   * The output list of Users
    */
   var UserAreas = React.createClass({displayName: 'UserAreas',
-
     render: function() {
-      var app = this;
-      var userAreaList = app.props.state.room.status === Constants.RoomState.CONNECTED ?
-        UserAreaList({users: app.props.state.users}) : React.DOM.div({id: "noUser"});
+      var showList = this.props.state.room.status === Constants.RoomState.CONNECTED ?
+        UserAreaList({users: this.props.state.users}) : React.DOM.div({id: "noUser"});
 
       return (
-        React.DOM.section({id: "userareas", className: app.props.state.room.states.screensharing ? 'screensharing' : 'split' + Utils.keys(app.props.state.users).length}, 
-          userAreaList
+        React.DOM.section({id: "userareas", className: this.props.state.room.screensharing ? 'screensharing' : 'split' + this.props.state.users.length}, 
+          showList
         )
       );
     }
-
   });
 
   /**
-   * The wrapper for `UserArea` component.
-   * @class UserAreaList
+   * Contains the UserAreaList class element
+   * The wrapper for UserArea
    */
   var UserAreaList = React.createClass({displayName: 'UserAreaList',
-
     render: function() {
-      var scope = this;
-      var outputHTML = [];
-
-      Utils.forEach(scope.props.users, function (user, userId) {
-        outputHTML.push(
-          React.DOM.div({key: userId, className: 'userarea' + (user.video && user.video.screensharing ? ' screensharing' : '')}, 
-            UserArea({user: user, userId: userId})
+      var userareas = this.props.users.map(function(user) {
+        return (
+          React.DOM.div({key: user.id, className: 'userarea' + (user.screensharing ? ' screensharing' : '')}, 
+            UserArea({user: user})
           )
-        )
+        );
       });
 
-      return (React.DOM.div(null, outputHTML));
+      return (
+        React.DOM.div(null, 
+          userareas
+        )
+      );
     }
-
   });
 
   /**
-   * The user component.
-   * @class UserArea
+   * Contains the UserArea class element
+   * The wrapper for a User information
    */
   var UserArea = React.createClass({displayName: 'UserArea',
-
     /**
-     * Attaches the MediaStream to the <video> (or <object> for Temasys WebRTC Plugin) element.
-     * @method handleMCUClick
-     * @for Controls
+     * Handles the attaching of Stream
      */
     attachStream: function() {
-      var scope = this;
-      var video = document.getElementById('stream-' + scope.props.userId);
-      var renderedStreamId = document.getElementById('stream-id-' + scope.props.userId);
+      var video = document.getElementById('us' + this.props.user.id);
 
-      if (video && renderedStreamId && scope.props.user.stream && scope.props.user.streamId !== renderedStreamId.value) {
-        window.attachMediaStream(video, scope.props.user.stream);
-        renderedStreamId.value = scope.props.user.streamId;
+      if (video && this.props.user.stream) {
+        // Re-render only when necessary
+        if (this.props.user.renderStreamId !== this.props.user.stream.id) {
+          window.attachMediaStream(video, this.props.user.stream);
+          this.props.user.renderStreamId = this.props.user.stream.id;
+        }
       }
     },
 
+    /**
+     * Handles when Stream is started
+     */
     componentDidMount: function() {
       this.attachStream();
     },
 
+    /**
+     * Handles when Stream is updated
+     */
     componentDidUpdate: function() {
       this.attachStream();
     },
 
+    /**
+     * Handles the rendering of the UserArea
+     */
     render: function() {
-      var scope = this;
-      var outputHTML = [];
+      var res = [];
 
-      // Self has not shared any stream.
-      if (!scope.props.user.stream && scope.props.userId === 'self') {
-        outputHTML.push(
+      // If User and no Stream available yet
+      if(this.props.user.stream === null && this.props.user.id === 0) {
+        res.push(
           React.DOM.span({className: "userInfo"}, 
             "Share your camera and microphone to participate in the call"
           )
         );
-      
-      // If is not self and has not been connected
-      } else if (!scope.props.user.connected && scope.props.userId !== 'self') {
-        outputHTML.push(
+
+      // If User has error accessing Stream
+      } else if(this.props.user.error && this.props.user.id) {
+        res.push(
+          React.DOM.span({className: "userInfo"}, 
+            "Stream could not be established"
+          )
+        );
+
+      // If Peer has joined the Room but Stream is initializing
+      } else if(this.props.user.stream === null) {
+        res.push(
           React.DOM.span({className: "userInfo"}, 
             "Joining..."
           )
         );
 
-      // Peer is connected.
+      // Initialize Peer or User DOM
       } else {
-        // Push the <video> element.
-        outputHTML.push(React.DOM.video({
-          id: 'stream-' + scope.props.userId,
+        // <video> element
+        res.push(React.DOM.video({
+          id: 'us' + this.props.user.id,
           autoPlay: true,
-          muted: scope.props.userId === 'self'
+          muted: this.props.user.id === 0
         }));
 
-        outputHTML.push(React.DOM.input({
-          id: 'stream-id-' + scope.props.userId,
-          type: 'hidden',
-          value: null
-        }));
+        var muted = [];
+        var disabled = [];
 
-        var mediaMuted = [];
-        var mediaDisabled = [];
-
-        if (!scope.props.user.audio) {
-          mediaDisabled.push('Audio');
-        } else if(this.props.user.audio.muted) {
-          mediaMuted.push('Audio');
+        // Status of audio in Stream
+        if (!this.props.user.hasAudio) {
+          disabled.push('Audio');
+        } else if(this.props.user.audioMute) {
+          muted.push('Audio');
         }
 
-        if (!scope.props.user.video) {
-          mediaDisabled.push('Video');
-        } else if(this.props.user.video.muted) {
-          mediaMuted.push('Video');
+        // Status of video in Stream
+        if (!this.props.user.hasVideo) {
+          disabled.push('Video');
+        } else if(this.props.user.videoMute) {
+          muted.push('Video');
         }
 
-        outputHTML.push(
+        // If any has disabled
+        // If any has muted
+        res.push(
           React.DOM.span({className: "userInfo"}, 
-            typeof scope.props.user.mcuConnected === 'boolean' && !scope.props.user.mcuConnected ? 'Connecting to MCU ...' : '', React.DOM.br(null), 
-            mediaDisabled.length > 0 ? mediaDisabled.join('/') + ' disabled' : '', " ", React.DOM.br(null), 
-            mediaMuted.length > 0 ? mediaMuted.join('/') + ' muted' : ''
+            disabled.length > 0 ? disabled.join('/') + ' disabled' : '', " ", React.DOM.br(null), 
+            muted.length > 0 ? muted.join('/') + ' muted' : ''
           )
         );
       }
 
-      return (React.DOM.div(null, outputHTML));
+      return (
+        React.DOM.div(null, 
+          res
+        )
+      );
     }
-
   });
 
   return UserAreas;

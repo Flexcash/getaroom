@@ -20,15 +20,7 @@ define([], function() {
   var config = {};
 
   switch (window.location.host) {
-    case 'rwong.heroku.com':
-      config = {
-        env: 'dev',
-        Skylink: {
-          apiMCUKey: '68e78643-370a-48e7-a9da-543dbe7b735a',
-          apiNoMCUKey: '68e78643-370a-48e7-a9da-543dbe7b735a'
-        },
-      };
-      break;
+
     case 'getaroom.io':
       config = {
         env: 'prod',
@@ -51,17 +43,11 @@ define([], function() {
 
     default:
       config = {
-        env: 'dev',
+        env: 'local',
         Skylink: {
-          apiMCUKey: '68e78643-370a-48e7-a9da-543dbe7b735a',
-          apiNoMCUKey: '68e78643-370a-48e7-a9da-543dbe7b735a'
-        },
-        // env: 'local',
-        // Skylink: {
-        //   apiMCUKey: '7bcba74c-ee42-4fb7-ba17-94a9edb3c1bf',
-        //   apiNoMCUKey: '7e31b061-71e6-4dd7-bd55-516579973930'
-
-        // }
+          apiMCUKey: '7bcba74c-ee42-4fb7-ba17-94a9edb3c1bf',
+          apiNoMCUKey: '7e31b061-71e6-4dd7-bd55-516579973930'
+        }
       };
   }
 

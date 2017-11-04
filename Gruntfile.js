@@ -217,20 +217,20 @@ module.exports = function (grunt) {
             },
             dev: {
                 options: {
-                    base: '<%= base %>/',
-                    port: process.env.PORT || 8085,
-                    open: 'http://rwong.heroku.com',
-                    protocol: 'http',
-                    // key: grunt.file.read('server.key').toString(),
-                    // cert: grunt.file.read('server.crt').toString(),
-                    // ca: grunt.file.read('ca.crt').toString()
+                    base: '<%= source %>/',
+                    port: 8085,
+                    open: 'https://localhost:8085',
+                    protocol: 'https',
+                    //key: grunt.file.read('server.key').toString(),
+                    //cert: grunt.file.read('server.crt').toString(),
+                    //ca: grunt.file.read('ca.crt').toString()
                 }
             },
             production: {
                 options: {
                     base: '<%= production %>/',
-                    port: process.env.PORT || 8080,
-                    open: 'https://rwong.heroku.com:' + process.env.PORT,
+                    port: 8080,
+                    open: 'https://localhost:8080',
                     protocol: 'https',
                     key: grunt.file.read('server.key').toString(),
                     cert: grunt.file.read('server.crt').toString(),
