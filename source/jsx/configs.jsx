@@ -51,7 +51,7 @@ define([], function() {
 
     default:
       config = {
-        env: 'prod',
+        env: 'local',
         Skylink: {
           apiMCUKey: '68e78643-370a-48e7-a9da-543dbe7b735a',
           apiNoMCUKey: '68e78643-370a-48e7-a9da-543dbe7b735a'
