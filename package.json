@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "skylinkjs": "^0.6.0",
-    "grunt": "^0.4.5",
+    "grunt": "^0.4.5"
   },
   "devDependencies": {
     "grunt-connect-pushstate": "^0.2.0",
