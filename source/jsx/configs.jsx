@@ -20,7 +20,15 @@ define([], function() {
   var config = {};
 
   switch (window.location.host) {
-
+    case 'rwong.heroku.com':
+      config = {
+        env: 'prod',
+        Skylink: {
+          apiMCUKey: '92898880-ab04-4f94-a82f-cabd7c0d120c',
+          apiNoMCUKey: '691e9702-bdde-4611-889e-8c57eacbcfca'
+        },
+      };
+      break;
     case 'getaroom.io':
       config = {
         env: 'prod',
