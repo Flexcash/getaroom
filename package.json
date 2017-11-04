@@ -11,6 +11,7 @@
     "start": "grunt dev"
   },
   "dependencies": {
+    "grunt-cli": "^1.2.0",
     "skylinkjs": "^0.6.0"
   },
   "devDependencies": {
