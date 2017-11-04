@@ -357,7 +357,7 @@ module.exports = function (grunt) {
     grunt.registerTask('dev', [
         'stylus:dev',
         'react:dev',
-        'connect:production',
+        'connect:dev',
         'watch'
     ]);
 
