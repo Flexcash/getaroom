@@ -217,7 +217,7 @@ module.exports = function (grunt) {
             },
             dev: {
                 options: {
-                    base: '<%= source %>/',
+                    base: '<%= production %>/',
                     port: process.env.PORT || 8085,
                     open: 'https://rwong.heroku.com:8085',
                     protocol: 'https',
